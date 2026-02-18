@@ -57,6 +57,11 @@ public:
     std::string get_arch(const bool& number_only = false,
                          const bool& support_arch_family = false) {
         const auto& [major, minor] = get_arch_pair();
+        // SM120 (GB200) maps to SM100a — uses the same TMA/WGMMA instructions
+        if (major == 12) {
+            if (number_only) return "100";
+            return support_arch_family ? "100f" : "100a";
+        }
         if (major == 10 and minor != 1) {
             if (number_only)
                 return "100";
@@ -66,7 +71,9 @@ public:
     }
 
     int get_arch_major() {
-        return get_arch_pair().first;
+        // SM120 (GB200) uses SM100a kernels via TMA/WGMMA compatibility
+        const auto major = get_arch_pair().first;
+        return (major == 12) ? 10 : major;
     }
 
     void set_num_sms(const int& new_num_sms) {
