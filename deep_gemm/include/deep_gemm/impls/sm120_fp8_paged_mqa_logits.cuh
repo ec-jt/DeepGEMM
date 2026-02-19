@@ -11,6 +11,7 @@
 #include <deep_gemm/common/utils.cuh>
 #include <deep_gemm/common/sm90_utils.cuh>
 #include <deep_gemm/impls/sm90_fp8_mqa_logits.cuh>
+#include <deep_gemm/impls/sm90_fp8_paged_mqa_logits.cuh>
 
 // SM120 paged MQA logits kernel
 // Uses SM89 MMA atom (mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32)
