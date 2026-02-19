@@ -57,11 +57,14 @@ public:
     std::string get_arch(const bool& number_only = false,
                          const bool& support_arch_family = false) {
         auto [major, minor] = get_arch_pair();
-        // SM120 (RTX 5090): compile cubins for sm_120a (native arch) but
-        // use SM90 kernel source paths (via get_arch_major() returning 9).
-        // SM120 can compile SM90 kernel sources for its native arch.
+        // SM120 (RTX 5090): two different arch strings needed:
+        //   number_only=true  → "90" (selects SM90 kernel source .cuh files)
+        //   number_only=false → "120a" (NVCC --gpu-architecture target for cubin)
+        // SM120 can compile SM90 kernel sources for sm_120a. Cannot load sm_90a cubins.
         if (major == 12) {
-            return std::to_string(major * 10 + minor) + (number_only ? "" : "a");
+            if (number_only)
+                return "90";
+            return std::to_string(major * 10 + minor) + "a";
         }
         if (major == 10 and minor != 1) {
             if (number_only)
