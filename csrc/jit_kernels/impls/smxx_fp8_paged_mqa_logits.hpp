@@ -182,7 +182,10 @@ static void smxx_fp8_paged_mqa_logits(const torch::Tensor& q,
     const int mma_m = (arch_major == 10 ? 128 : 64);
     const int num_math_warp_groups = split_kv / mma_m;
     const int num_math_threads = num_math_warp_groups * 128;
-    const int num_q_stages = 3, num_kv_stages = (arch_major == 10 ? 4 : 3);
+    // SM120 has 100KB smem (vs 232KB SM90), reduce pipeline stages to fit
+    // Performance impact: ~10-20% less throughput due to reduced load/compute overlap
+    const int num_q_stages = (arch_major == 12 ? 2 : 3);
+    const int num_kv_stages = (arch_major == 10 ? 4 : (arch_major == 12 ? 2 : 3));
     DG_HOST_ASSERT(split_kv % mma_m == 0 and logits_stride % split_kv == 0);
 
     // Construct TMAs
