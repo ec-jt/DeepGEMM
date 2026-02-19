@@ -5,6 +5,7 @@
 #include "../../jit/kernel_runtime.hpp"
 #include "../heuristics/sm90.hpp"
 #include "../heuristics/sm100.hpp"
+#include "../heuristics/sm120.hpp"
 #include "runtime_utils.hpp"
 
 namespace deep_gemm {
@@ -94,7 +95,8 @@ static void smxx_fp8_mqa_logits(const torch::Tensor& q,
     constexpr int block_kv = 256;
     constexpr int num_specialized_threads = 128;
     constexpr int num_q_stages = 3, num_kv_stages = 3;
-    const int num_math_threads = (device_runtime->get_arch_major() == 10 ? 256 : 512);
+    const auto arch_major = device_runtime->get_arch_major();
+    const int num_math_threads = (arch_major == 10 ? 256 : 512);
     const int block_q = block_qh / num_heads;
     DG_HOST_ASSERT(block_qh % num_heads == 0);
     DG_HOST_ASSERT(seq_len_alignment % block_q == 0);
@@ -128,8 +130,10 @@ static void smxx_fp8_mqa_logits(const torch::Tensor& q,
     smem_size += num_kv_stages * kv_scale_size_per_stage;
     smem_size += (num_q_stages * 2 + num_kv_stages * 2 + (num_math_threads / 128) * 2) * 8;
     smem_size += 4;
-    DG_HOST_ASSERT(smem_size <= SM90ArchSpec::smem_capacity);
-    DG_HOST_ASSERT(smem_size <= SM100ArchSpec::smem_capacity);
+    if (arch_major == 12)
+        DG_HOST_ASSERT(smem_size <= SM120ArchSpec::smem_capacity);
+    else
+        DG_HOST_ASSERT(smem_size <= SM90ArchSpec::smem_capacity);
 
     // Launch
     const SMXXFP8MQALogitsRuntime::Args& args = {

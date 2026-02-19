@@ -8,7 +8,10 @@
 #include "../jit_kernels/impls/sm90_bf16_gemm.hpp"
 #include "../jit_kernels/impls/sm100_fp8_gemm_1d1d.hpp"
 #include "../jit_kernels/impls/sm100_bf16_gemm.hpp"
-#endif 
+#include "../jit_kernels/impls/sm120_fp8_gemm_1d1d.hpp"
+#include "../jit_kernels/impls/sm120_fp8_gemm_1d2d.hpp"
+#include "../jit_kernels/impls/sm120_bf16_gemm.hpp"
+#endif
 
 #include "../jit_kernels/impls/smxx_cublaslt.hpp"
 
@@ -84,13 +87,19 @@ static void fp8_fp4_gemm_nt(const std::pair<torch::Tensor, torch::Tensor>& a,
         a.second, b.second, m, n, k, recipe, recipe_a, recipe_b, std::nullopt, std::nullopt, disable_ue8m0_cast);
 
     // Dispatch into different implements
-    if (arch_major == 9 and sfa.scalar_type() == torch::kFloat) {
+    if ((arch_major == 9 or arch_major == 12) and sfa.scalar_type() == torch::kFloat) {
         const int gran_n = recipe.has_value() ? std::get<1>(recipe.value()) : std::get<0>(recipe_b.value());
         if (gran_n == 1) {
-            sm90_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, compiled_dims);
+            if (arch_major == 12)
+                sm120_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, compiled_dims);
+            else
+                sm90_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, compiled_dims);
         } else {
             const auto& major_sfb = get_major_type_ab(sfb);
-            sm90_fp8_gemm_1d2d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, major_sfb, compiled_dims);
+            if (arch_major == 12)
+                sm120_fp8_gemm_1d2d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, major_sfb, compiled_dims);
+            else
+                sm90_fp8_gemm_1d2d(a.first, sfa, b.first, sfb, c, d, m, n, k, major_a, major_b, major_sfb, compiled_dims);
         }
     } else if (arch_major == 10 and sfa.scalar_type() == torch::kInt) {
         sm100_fp8_fp4_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, k, gran_k_a, gran_k_b,
@@ -191,11 +200,15 @@ static void m_grouped_fp8_fp4_gemm_nt_contiguous(const std::pair<torch::Tensor, 
         a.second, b.second, m, n, k, recipe, recipe_a, recipe_b, std::nullopt, num_groups, disable_ue8m0_cast);
 
     // Dispatch implementation
-    if (arch_major == 9 and sfa.scalar_type() == torch::kFloat) {
+    if ((arch_major == 9 or arch_major == 12) and sfa.scalar_type() == torch::kFloat) {
         const auto& major_sfb = get_major_type_ab(sfb);
         DG_HOST_ASSERT(not use_psum_layout);
-        sm90_m_grouped_fp8_gemm_contiguous_1d2d(a.first, sfa, b.first, sfb, d, grouped_layout,
-                                                num_groups, m, n, k, major_a, major_b, major_sfb, compiled_dims);
+        if (arch_major == 12)
+            sm120_m_grouped_fp8_gemm_contiguous_1d2d(a.first, sfa, b.first, sfb, d, grouped_layout,
+                                                     num_groups, m, n, k, major_a, major_b, major_sfb, compiled_dims);
+        else
+            sm90_m_grouped_fp8_gemm_contiguous_1d2d(a.first, sfa, b.first, sfb, d, grouped_layout,
+                                                    num_groups, m, n, k, major_a, major_b, major_sfb, compiled_dims);
     } else if (arch_major == 10 and sfa.scalar_type() == torch::kInt) {
         sm100_m_grouped_fp8_fp4_gemm_contiguous_1d1d(a.first, sfa, b.first, sfb, d, grouped_layout,
                                                      num_groups, m, n, k, gran_k_a, gran_k_b, major_a, major_b,
@@ -255,10 +268,14 @@ static void m_grouped_fp8_fp4_gemm_nt_masked(const std::pair<torch::Tensor, torc
         a.second, b.second, m, n, k, recipe, recipe_a, recipe_b, num_groups, num_groups, disable_ue8m0_cast);
 
     // Dispatch implementation
-    if (arch_major == 9 and sfa.scalar_type() == torch::kFloat) {
+    if ((arch_major == 9 or arch_major == 12) and sfa.scalar_type() == torch::kFloat) {
         const auto& major_sfb = get_major_type_ab(sfb);
-        sm90_m_grouped_fp8_gemm_masked_1d2d(a.first, sfa, b.first, sfb, d, masked_m,
-                                            num_groups, m, n, k, expected_m, major_a, major_b, major_sfb, compiled_dims);
+        if (arch_major == 12)
+            sm120_m_grouped_fp8_gemm_masked_1d2d(a.first, sfa, b.first, sfb, d, masked_m,
+                                                 num_groups, m, n, k, expected_m, major_a, major_b, major_sfb, compiled_dims);
+        else
+            sm90_m_grouped_fp8_gemm_masked_1d2d(a.first, sfa, b.first, sfb, d, masked_m,
+                                                num_groups, m, n, k, expected_m, major_a, major_b, major_sfb, compiled_dims);
     } else if (arch_major == 10 and sfa.scalar_type() == torch::kInt) {
         sm100_m_grouped_fp8_fp4_gemm_masked_1d1d(a.first, sfa, b.first, sfb, d, masked_m,
                                                  num_groups, m, n, k, expected_m, gran_k_a, gran_k_b,
@@ -351,9 +368,13 @@ static void k_grouped_fp8_gemm_nt_contiguous(const std::pair<torch::Tensor, torc
 
     // Dispatch implementation
     const auto& arch_major = device_runtime->get_arch_major();
-    if (arch_major == 9) {
-        sm90_k_grouped_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, ks, ks_tensor, tensor_map_buffer,
-                                     cute::UMMA::Major::K, cute::UMMA::Major::K, compiled_dims);
+    if (arch_major == 9 or arch_major == 12) {
+        if (arch_major == 12)
+            sm120_k_grouped_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, ks, ks_tensor, tensor_map_buffer,
+                                          cute::UMMA::Major::K, cute::UMMA::Major::K, compiled_dims);
+        else
+            sm90_k_grouped_fp8_gemm_1d1d(a.first, sfa, b.first, sfb, c, d, m, n, ks, ks_tensor, tensor_map_buffer,
+                                         cute::UMMA::Major::K, cute::UMMA::Major::K, compiled_dims);
     } else {
         DG_HOST_UNREACHABLE("Unsupported architecture");
     }
@@ -388,8 +409,11 @@ static void bf16_gemm_nt(const torch::Tensor& a,
 
     // Dispatch into different implements
     const auto& arch_major = device_runtime->get_arch_major();
-    if (arch_major == 9) {
-        sm90_bf16_gemm(a, b, c, d, m, n, k, major_a, major_b, compiled_dims);
+    if (arch_major == 9 or arch_major == 12) {
+        if (arch_major == 12)
+            sm120_bf16_gemm(a, b, c, d, m, n, k, major_a, major_b, compiled_dims);
+        else
+            sm90_bf16_gemm(a, b, c, d, m, n, k, major_a, major_b, compiled_dims);
     } else if (arch_major == 10) {
         sm100_bf16_gemm(a, b, c, d, m, n, k, major_a, major_b, compiled_dims);
     } else {
@@ -462,9 +486,13 @@ static void m_grouped_bf16_gemm_nt_contiguous(const torch::Tensor& a, const torc
 
     // Dispatch implementation
     const auto& arch_major = device_runtime->get_arch_major();
-    if (arch_major == 9) {
+    if (arch_major == 9 or arch_major == 12) {
         DG_HOST_ASSERT(not use_psum_layout);
-        sm90_m_grouped_bf16_gemm_contiguous(a, b, d, grouped_layout,
+        if (arch_major == 12)
+            sm120_m_grouped_bf16_gemm_contiguous(a, b, d, grouped_layout,
+                                            num_groups, m, n, k, major_a, major_b, compiled_dims);
+        else
+            sm90_m_grouped_bf16_gemm_contiguous(a, b, d, grouped_layout,
                                             num_groups, m, n, k, major_a, major_b, compiled_dims);
     } else if (arch_major == 10) {
         sm100_m_grouped_bf16_gemm_contiguous(a, b, d, grouped_layout,
@@ -510,8 +538,12 @@ static void m_grouped_bf16_gemm_nt_masked(const torch::Tensor& a, const torch::T
 
     // Dispatch implementation
     const auto& arch_major = device_runtime->get_arch_major();
-    if (arch_major == 9) {
-        sm90_bf16_m_grouped_gemm_masked(a, b, d, masked_m,
+    if (arch_major == 9 or arch_major == 12) {
+        if (arch_major == 12)
+            sm120_bf16_m_grouped_gemm_masked(a, b, d, masked_m,
+                                        num_groups, m, n, k, expected_m, major_a, major_b, compiled_dims);
+        else
+            sm90_bf16_m_grouped_gemm_masked(a, b, d, masked_m,
                                         num_groups, m, n, k, expected_m, major_a, major_b, compiled_dims);
     } else if (arch_major == 10) {
         sm100_m_grouped_bf16_gemm_masked(a, b, d, masked_m,
@@ -547,8 +579,12 @@ static void k_grouped_bf16_gemm_tn_contiguous(const torch::Tensor& a,
 
     // Dispatch implementation
     const auto& arch_major = device_runtime->get_arch_major();
-    if (arch_major == 9) {
-        sm90_bf16_k_grouped_gemm(a, b, c, d, m, n, ks, ks_tensor,
+    if (arch_major == 9 or arch_major == 12) {
+        if (arch_major == 12)
+            sm120_bf16_k_grouped_gemm(a, b, c, d, m, n, ks, ks_tensor,
+                                 cute::UMMA::Major::MN, cute::UMMA::Major::MN, compiled_dims);
+        else
+            sm90_bf16_k_grouped_gemm(a, b, c, d, m, n, ks, ks_tensor,
                                  cute::UMMA::Major::MN, cute::UMMA::Major::MN, compiled_dims);
     } else if (arch_major == 10) {
         sm100_bf16_k_grouped_gemm(a, b, c, d, m, n, ks, ks_tensor,

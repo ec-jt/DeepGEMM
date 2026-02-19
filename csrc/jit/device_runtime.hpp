@@ -57,15 +57,13 @@ public:
     std::string get_arch(const bool& number_only = false,
                          const bool& support_arch_family = false) {
         auto [major, minor] = get_arch_pair();
-        // SM120 (RTX 5090/GB200): Blackwell like SM100, uses UMMA/TMEM (not SM90 WGMMA).
-        //   number_only=true  → "100" (selects SM100 kernel source .cuh files)
-        //   number_only=false → "100a" (compile SM100 cubins that run on SM120 via compat)
-        // SM120 supports tcgen05/umma when compiled for sm_100a target.
-        // sm_120a does NOT support tcgen05 instructions.
+        // SM120 (RTX 5090): uses mma.sync.f8f6f4 instructions (not wgmma or tcgen05).
+        //   number_only=true  → "120" (selects SM120 kernel source .cuh files)
+        //   number_only=false → "120a" (NVCC --gpu-architecture for native cubin)
         if (major == 12) {
             if (number_only)
-                return "100";
-            return support_arch_family ? "100f" : "100a";
+                return "120";
+            return std::to_string(major * 10 + minor) + "a";
         }
         if (major == 10 and minor != 1) {
             if (number_only)
@@ -76,9 +74,7 @@ public:
     }
 
     int get_arch_major() {
-        // SM120 (RTX 5090/GB200) uses SM100 UMMA/TMEM kernels (not SM90 WGMMA)
-        const auto major = get_arch_pair().first;
-        return (major == 12) ? 10 : major;
+        return get_arch_pair().first;
     }
 
     void set_num_sms(const int& new_num_sms) {
