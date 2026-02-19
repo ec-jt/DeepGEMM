@@ -59,12 +59,13 @@ public:
         auto [major, minor] = get_arch_pair();
         // SM120 (RTX 5090/GB200): Blackwell like SM100, uses UMMA/TMEM (not SM90 WGMMA).
         //   number_only=true  → "100" (selects SM100 kernel source .cuh files)
-        //   number_only=false → "120a" (NVCC --gpu-architecture target for cubin)
-        // SM120 can compile SM100 sources for sm_120a. Cannot load sm_100a cubins.
+        //   number_only=false → "100a" (compile SM100 cubins that run on SM120 via compat)
+        // SM120 supports tcgen05/umma when compiled for sm_100a target.
+        // sm_120a does NOT support tcgen05 instructions.
         if (major == 12) {
             if (number_only)
                 return "100";
-            return std::to_string(major * 10 + minor) + "a";
+            return support_arch_family ? "100f" : "100a";
         }
         if (major == 10 and minor != 1) {
             if (number_only)
