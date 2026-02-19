@@ -57,13 +57,13 @@ public:
     std::string get_arch(const bool& number_only = false,
                          const bool& support_arch_family = false) {
         auto [major, minor] = get_arch_pair();
-        // SM120 (RTX 5090): two different arch strings needed:
-        //   number_only=true  → "90" (selects SM90 kernel source .cuh files)
+        // SM120 (RTX 5090/GB200): Blackwell like SM100, uses UMMA/TMEM (not SM90 WGMMA).
+        //   number_only=true  → "100" (selects SM100 kernel source .cuh files)
         //   number_only=false → "120a" (NVCC --gpu-architecture target for cubin)
-        // SM120 can compile SM90 kernel sources for sm_120a. Cannot load sm_90a cubins.
+        // SM120 can compile SM100 sources for sm_120a. Cannot load sm_100a cubins.
         if (major == 12) {
             if (number_only)
-                return "90";
+                return "100";
             return std::to_string(major * 10 + minor) + "a";
         }
         if (major == 10 and minor != 1) {
@@ -75,9 +75,9 @@ public:
     }
 
     int get_arch_major() {
-        // SM120 (RTX 5090) uses SM90 WGMMA kernels (not SM100 UMMA/TMEM)
+        // SM120 (RTX 5090/GB200) uses SM100 UMMA/TMEM kernels (not SM90 WGMMA)
         const auto major = get_arch_pair().first;
-        return (major == 12) ? 9 : major;
+        return (major == 12) ? 10 : major;
     }
 
     void set_num_sms(const int& new_num_sms) {
