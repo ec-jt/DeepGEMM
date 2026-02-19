@@ -13,7 +13,7 @@
 
 namespace deep_gemm {
 
-class SM90FP8Gemm1D1DRuntime final: public LaunchRuntime<SM90FP8Gemm1D1DRuntime> {
+class SM120FP8Gemm1D1DRuntime final: public LaunchRuntime<SM120FP8Gemm1D1DRuntime> {
 public:
     struct Args {
         int m, n, k, num_groups;
@@ -116,7 +116,7 @@ static void sm120_fp8_gemm_1d1d(const torch::Tensor& a, const torch::Tensor& sfa
                                                  0);
 
     // Launch
-    const SM90FP8Gemm1D1DRuntime::Args& args = {
+    const SM120FP8Gemm1D1DRuntime::Args& args = {
         .m = m, .n = n, .k = k,
         .num_groups = 1,
         .compiled_dims = compiled_dims,
@@ -134,10 +134,10 @@ static void sm120_fp8_gemm_1d1d(const torch::Tensor& a, const torch::Tensor& sfa
         .tensor_map_sfb = tensor_map_sfb,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90FP8Gemm1D1DRuntime::generate(args);
+    const auto& code = SM120FP8Gemm1D1DRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_fp8_gemm_1d1d", code);
 
-    SM90FP8Gemm1D1DRuntime::launch(runtime, args);
+    SM120FP8Gemm1D1DRuntime::launch(runtime, args);
 }
 
 static void sm120_k_grouped_fp8_gemm_1d1d(const torch::Tensor& a, const torch::Tensor& sfa,
@@ -192,7 +192,7 @@ static void sm120_k_grouped_fp8_gemm_1d1d(const torch::Tensor& a, const torch::T
                                                  config.smem_config.swizzle_cd_mode);
 
     // Launch
-    const SM90FP8Gemm1D1DRuntime::Args& args = {
+    const SM120FP8Gemm1D1DRuntime::Args& args = {
         .m = m, .n = n, .k = sum_k,
         .num_groups = num_groups,
         .compiled_dims = compiled_dims,
@@ -210,10 +210,10 @@ static void sm120_k_grouped_fp8_gemm_1d1d(const torch::Tensor& a, const torch::T
         .tensor_map_sfb = tensor_map_sfb,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90FP8Gemm1D1DRuntime::generate(args);
+    const auto& code = SM120FP8Gemm1D1DRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_fp8_gemm_1d1d", code);
 
-    SM90FP8Gemm1D1DRuntime::launch(runtime, args);
+    SM120FP8Gemm1D1DRuntime::launch(runtime, args);
 }
 
 } // namespace deep_gemm

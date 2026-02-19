@@ -12,7 +12,7 @@
 
 namespace deep_gemm {
 
-class SM90BF16GemmRuntime final: public LaunchRuntime<SM90BF16GemmRuntime> {
+class SM120BF16GemmRuntime final: public LaunchRuntime<SM120BF16GemmRuntime> {
 public:
     struct Args {
         int m, n, k, num_groups;
@@ -105,7 +105,7 @@ static void sm120_bf16_gemm(const torch::Tensor& a,
                                                 config.smem_config.swizzle_cd_mode);
 
     // Launch
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = m, .n = n, .k = k,
         .num_groups = 1,
         .compiled_dims = compiled_dims,
@@ -118,9 +118,9 @@ static void sm120_bf16_gemm(const torch::Tensor& a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_bf16_gemm", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
 static void sm120_m_grouped_bf16_gemm_contiguous(const torch::Tensor& a,
@@ -159,7 +159,7 @@ static void sm120_m_grouped_bf16_gemm_contiguous(const torch::Tensor& a,
                                                 config.smem_config.swizzle_cd_mode);
 
     // Launch
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = m, .n = n, .k = k,
         .num_groups = num_groups,
         .compiled_dims = compiled_dims,
@@ -172,9 +172,9 @@ static void sm120_m_grouped_bf16_gemm_contiguous(const torch::Tensor& a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_m_grouped_bf16_gemm_contiguous", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
 static void sm120_bf16_m_grouped_gemm_masked(const torch::Tensor& a,
@@ -214,7 +214,7 @@ static void sm120_bf16_m_grouped_gemm_masked(const torch::Tensor& a,
                                                 config.smem_config.swizzle_cd_mode);
 
     // Launch
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = m, .n = n, .k = k,
         .num_groups = num_groups,
         .compiled_dims = compiled_dims,
@@ -227,9 +227,9 @@ static void sm120_bf16_m_grouped_gemm_masked(const torch::Tensor& a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_bf16_m_grouped_gemm_masked", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
 static void sm120_bf16_k_grouped_gemm(const torch::Tensor& a,
@@ -276,7 +276,7 @@ static void sm120_bf16_k_grouped_gemm(const torch::Tensor& a,
                                                  config.smem_config.swizzle_cd_mode);
 
     // Launch kernel
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = m, .n = n, .k = sum_k,
         .num_groups = num_groups,
         .compiled_dims = compiled_dims,
@@ -289,12 +289,12 @@ static void sm120_bf16_k_grouped_gemm(const torch::Tensor& a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_bf16_k_grouped_gemm", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
-static void sm90_bf16_bhr_hdr_bhd(const torch::Tensor& tensor_a,
+static void sm120_bf16_bhr_hdr_bhd(const torch::Tensor& tensor_a,
                                   const torch::Tensor& tensor_b,
                                   const torch::Tensor& tensor_d,
                                   const int& b, const int& h, const int& r, const int& d,
@@ -323,7 +323,7 @@ static void sm90_bf16_bhr_hdr_bhd(const torch::Tensor& tensor_a,
                                                 tensor_d.stride(0), tensor_d.stride(1),
                                                 config.smem_config.swizzle_cd_mode);
     // Launch
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = b, .n = d, .k = r,
         .num_groups = h,
         .compiled_dims = compiled_dims,
@@ -336,12 +336,12 @@ static void sm90_bf16_bhr_hdr_bhd(const torch::Tensor& tensor_a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
-    const auto& runtime = compiler->build("sm90_bf16_bhr_hdr_bhd", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
+    const auto& runtime = compiler->build("sm120_bf16_bhr_hdr_bhd", code);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
-static void sm90_bf16_bhd_hdr_bhr(const torch::Tensor& tensor_a,
+static void sm120_bf16_bhd_hdr_bhr(const torch::Tensor& tensor_a,
                                   const torch::Tensor& tensor_b,
                                   const torch::Tensor& tensor_d,
                                   const int& b, const int& h, const int& r, const int& d,
@@ -370,7 +370,7 @@ static void sm90_bf16_bhd_hdr_bhr(const torch::Tensor& tensor_a,
                                                 tensor_d.stride(0), tensor_d.stride(1),
                                                 config.smem_config.swizzle_cd_mode);
     // Launch
-    const SM90BF16GemmRuntime::Args& args = {
+    const SM120BF16GemmRuntime::Args& args = {
         .m = b, .n = r, .k = d,
         .num_groups = h,
         .compiled_dims = compiled_dims,
@@ -383,9 +383,9 @@ static void sm90_bf16_bhd_hdr_bhr(const torch::Tensor& tensor_a,
         .tensor_map_b = tensor_map_b,
         .tensor_map_cd = tensor_map_cd,
     };
-    const auto& code = SM90BF16GemmRuntime::generate(args);
-    const auto& runtime = compiler->build("sm90_bf16_bhd_hdr_bhr", code);
-    SM90BF16GemmRuntime::launch(runtime, args);
+    const auto& code = SM120BF16GemmRuntime::generate(args);
+    const auto& runtime = compiler->build("sm120_bf16_bhd_hdr_bhr", code);
+    SM120BF16GemmRuntime::launch(runtime, args);
 }
 
 } // namespace deep_gemm

@@ -15,7 +15,7 @@
 
 namespace deep_gemm {
 
-class SM90FP8Gemm1D2DRuntime final: public LaunchRuntime<SM90FP8Gemm1D2DRuntime> {
+class SM120FP8Gemm1D2DRuntime final: public LaunchRuntime<SM120FP8Gemm1D2DRuntime> {
 public:
     struct Args {
         cute::UMMA::Major major_sfb;
@@ -117,7 +117,7 @@ static void sm120_fp8_gemm_1d2d(const torch::Tensor& a, const torch::Tensor& sfa
                                                   config.block_m, config.block_k, 1, 0);
 
     // Launch
-    const SM90FP8Gemm1D2DRuntime::Args& args = {
+    const SM120FP8Gemm1D2DRuntime::Args& args = {
         .major_sfb = major_sfb,
         .m = m, .n = n, .k = k,
         .num_groups = 1,
@@ -134,9 +134,9 @@ static void sm120_fp8_gemm_1d2d(const torch::Tensor& a, const torch::Tensor& sfa
         .tensor_map_d = tensor_map_d,
         .tensor_map_sfa = tensor_map_sfa,
     };
-    const auto& code = SM90FP8Gemm1D2DRuntime::generate(args);
+    const auto& code = SM120FP8Gemm1D2DRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_fp8_gemm_1d2d", code);
-    SM90FP8Gemm1D2DRuntime::launch(runtime, args);
+    SM120FP8Gemm1D2DRuntime::launch(runtime, args);
 }
 
 static void sm120_m_grouped_fp8_gemm_contiguous_1d2d(const torch::Tensor& a, const torch::Tensor& sfa,
@@ -178,7 +178,7 @@ static void sm120_m_grouped_fp8_gemm_contiguous_1d2d(const torch::Tensor& a, con
                                                   config.block_m, config.block_k, 1, 0);
 
     // Launch
-    const SM90FP8Gemm1D2DRuntime::Args& args = {
+    const SM120FP8Gemm1D2DRuntime::Args& args = {
         .major_sfb = major_sfb,
         .m = m, .n = n, .k = k,
         .num_groups = num_groups,
@@ -195,9 +195,9 @@ static void sm120_m_grouped_fp8_gemm_contiguous_1d2d(const torch::Tensor& a, con
         .tensor_map_d = tensor_map_d,
         .tensor_map_sfa = tensor_map_sfa,
     };
-    const auto& code = SM90FP8Gemm1D2DRuntime::generate(args);
+    const auto& code = SM120FP8Gemm1D2DRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_m_grouped_fp8_gemm_contiguous_1d2d", code);
-    SM90FP8Gemm1D2DRuntime::launch(runtime, args);
+    SM120FP8Gemm1D2DRuntime::launch(runtime, args);
 }
 
 static void sm120_m_grouped_fp8_gemm_masked_1d2d(const torch::Tensor& a, const torch::Tensor& sfa,
@@ -240,7 +240,7 @@ static void sm120_m_grouped_fp8_gemm_masked_1d2d(const torch::Tensor& a, const t
                                                   config.block_m, config.block_k, num_groups, 0);
 
     // Launch
-    const SM90FP8Gemm1D2DRuntime::Args& args = {
+    const SM120FP8Gemm1D2DRuntime::Args& args = {
         .major_sfb = major_sfb,
         .m = m, .n = n, .k = k,
         .num_groups = num_groups,
@@ -257,9 +257,9 @@ static void sm120_m_grouped_fp8_gemm_masked_1d2d(const torch::Tensor& a, const t
         .tensor_map_d = tensor_map_d,
         .tensor_map_sfa = tensor_map_sfa,
     };
-    const auto& code = SM90FP8Gemm1D2DRuntime::generate(args);
-    const auto& runtime = compiler->build("sm90_fp8_m_grouped_gemm_masked_1d2d", code);
-    SM90FP8Gemm1D2DRuntime::launch(runtime, args);
+    const auto& code = SM120FP8Gemm1D2DRuntime::generate(args);
+    const auto& runtime = compiler->build("sm120_fp8_m_grouped_gemm_masked_1d2d", code);
+    SM120FP8Gemm1D2DRuntime::launch(runtime, args);
 }
 
 static void sm120_fp8_bmm(const torch::Tensor& a, const torch::Tensor& sfa,
@@ -307,7 +307,7 @@ static void sm120_fp8_bmm(const torch::Tensor& a, const torch::Tensor& sfa,
                                                   config.block_m, config.block_k, batch_size, 0);
 
     // Launch
-    const SM90FP8Gemm1D2DRuntime::Args& args = {
+    const SM120FP8Gemm1D2DRuntime::Args& args = {
         .major_sfb = major_sfb,
         .m = m, .n = n, .k = k,
         .num_groups = batch_size,
@@ -324,9 +324,9 @@ static void sm120_fp8_bmm(const torch::Tensor& a, const torch::Tensor& sfa,
         .tensor_map_d = tensor_map_d,
         .tensor_map_sfa = tensor_map_sfa,
     };
-    const auto& code = SM90FP8Gemm1D2DRuntime::generate(args);
+    const auto& code = SM120FP8Gemm1D2DRuntime::generate(args);
     const auto& runtime = compiler->build("sm120_fp8_gemm_1d2d", code);
-    SM90FP8Gemm1D2DRuntime::launch(runtime, args);
+    SM120FP8Gemm1D2DRuntime::launch(runtime, args);
 }
 
 } // namespace deep_gemm
